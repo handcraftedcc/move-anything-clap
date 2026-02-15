@@ -55,7 +55,7 @@ ${CROSS_PREFIX}g++ -O3 -shared -fPIC -std=c++14 \
     -DNDEBUG \
     src/chain_audio_fx/clap_fx.cpp \
     src/dsp/clap_host.c \
-    -o build/dsp.so \
+    -o build/clap.so \
     -Isrc \
     -Isrc/dsp \
     -Isrc/chain_audio_fx \
@@ -65,8 +65,8 @@ ${CROSS_PREFIX}g++ -O3 -shared -fPIC -std=c++14 \
 # Copy files to dist (use cat to avoid ExtFS deallocation issues with Docker)
 echo "Packaging..."
 cat src/module.json > dist/clap/module.json
-cat build/dsp.so > dist/clap/dsp.so
-chmod +x dist/clap/dsp.so
+cat build/clap.so > dist/clap/clap.so
+chmod +x dist/clap/clap.so
 
 # Copy included plugins (if any)
 if [ -d "plugins" ] && [ "$(ls -A plugins/*.clap 2>/dev/null)" ]; then

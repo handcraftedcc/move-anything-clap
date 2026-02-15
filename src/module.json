@@ -2,11 +2,11 @@
   "id": "clap",
   "name": "CLAP FX",
   "abbrev": "CL",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Host for CLAP audio effect plugins",
   "author": "charlesvestal",
   "license": "MIT",
-  "dsp": "dsp.so",
+  "dsp": "clap.so",
   "api_version": 2,
   "capabilities": {
     "audio_out": true,
