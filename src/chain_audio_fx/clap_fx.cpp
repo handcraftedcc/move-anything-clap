@@ -375,7 +375,7 @@ static void v2_ensure_plugins_scanned(clap_fx_instance_t *inst) {
 
     char plugins_dir[512];
     char msg[512];
-    snprintf(plugins_dir, sizeof(plugins_dir), "%s/../../sound_generators/clap/plugins", inst->module_dir);
+    snprintf(plugins_dir, sizeof(plugins_dir), "%s/plugins", inst->module_dir);
 
     snprintf(msg, sizeof(msg), "Scanning plugins at: %s", plugins_dir);
     v2_fx_log(msg);
