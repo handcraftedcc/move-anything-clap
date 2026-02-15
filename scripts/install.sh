@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install CLAP Host module to Move
+# Install CLAP FX module to Move
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,20 +12,12 @@ if [ ! -d "dist/clap" ]; then
     exit 1
 fi
 
-echo "=== Installing CLAP Host Module ==="
+echo "=== Installing CLAP FX Module ==="
 
-# Deploy main module to Move - sound_generators subdirectory
+# Deploy to Move - audio_fx subdirectory
 echo "Copying module to Move..."
-ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/sound_generators/clap"
-scp -r dist/clap/* ableton@move.local:/data/UserData/move-anything/modules/sound_generators/clap/
-
-# Deploy audio FX plugin for chain
-if [ -f "dist/chain_audio_fx/clap/clap.so" ]; then
-    echo "Installing CLAP audio FX for Signal Chain..."
-    ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/audio_fx/clap"
-    scp dist/chain_audio_fx/clap/clap.so ableton@move.local:/data/UserData/move-anything/modules/audio_fx/clap/
-    scp dist/chain_audio_fx/clap/module.json ableton@move.local:/data/UserData/move-anything/modules/audio_fx/clap/
-fi
+ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/audio_fx/clap"
+scp -r dist/clap/* ableton@move.local:/data/UserData/move-anything/modules/audio_fx/clap/
 
 # Install chain presets if they exist
 if [ -d "src/chain_patches" ] && ls src/chain_patches/*.json 1> /dev/null 2>&1; then
@@ -36,19 +28,17 @@ fi
 
 # Create plugins directory on device
 echo "Creating plugins directory..."
-ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/sound_generators/clap/plugins"
+ssh ableton@move.local "mkdir -p /data/UserData/move-anything/modules/audio_fx/clap/plugins"
 
 # Set permissions so Module Store can update later
 echo "Setting permissions..."
-ssh ableton@move.local "chmod -R a+rw /data/UserData/move-anything/modules/sound_generators/clap"
-ssh ableton@move.local "chmod -R a+rw /data/UserData/move-anything/modules/audio_fx/clap" 2>/dev/null || true
+ssh ableton@move.local "chmod -R a+rw /data/UserData/move-anything/modules/audio_fx/clap"
 
 echo ""
 echo "=== Install Complete ==="
-echo "Module installed to: /data/UserData/move-anything/modules/sound_generators/clap/"
-echo "Audio FX installed to: /data/UserData/move-anything/modules/audio_fx/clap/"
+echo "Module installed to: /data/UserData/move-anything/modules/audio_fx/clap/"
 echo ""
 echo "Add your .clap plugin files to:"
-echo "  /data/UserData/move-anything/modules/sound_generators/clap/plugins/"
+echo "  /data/UserData/move-anything/modules/audio_fx/clap/plugins/"
 echo ""
 echo "Restart Move Anything to load the new module."

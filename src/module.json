@@ -1,43 +1,32 @@
 {
   "id": "clap",
-  "name": "CLAP Host",
+  "name": "CLAP FX",
   "abbrev": "CL",
-  "version": "0.3.4",
-  "description": "Host for CLAP audio plugins",
+  "version": "0.3.5",
+  "description": "Host for CLAP audio effect plugins",
   "author": "charlesvestal",
   "license": "MIT",
-  "ui": "ui.js",
   "dsp": "dsp.so",
   "api_version": 2,
-  "raw_ui": true,
   "capabilities": {
     "audio_out": true,
-    "audio_in": false,
-    "midi_in": true,
-    "midi_out": false,
-    "midi_channels": 16,
+    "audio_in": true,
     "chainable": true,
-    "component_type": "sound_generator",
+    "component_type": "audio_fx",
     "chain_params": [
       {
-        "key": "plugin",
+        "key": "plugin_id",
         "name": "Plugin",
-        "type": "int",
-        "min": 0,
-        "max_param": "plugin_count",
-        "default": 0
-      },
-      {
-        "key": "preset",
-        "name": "Preset",
-        "type": "int",
-        "min": 0,
-        "max_param": "preset_count",
-        "default": 0
+        "type": "string"
       }
     ]
   },
-  "defaults": {
-    "selected_plugin": ""
+  "assets": {
+    "path": "plugins",
+    "label": "CLAP Plugins",
+    "extensions": [
+      ".clap"
+    ],
+    "description": "Upload .clap audio effect plugins (ARM64 Linux)"
   }
 }
