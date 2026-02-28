@@ -1,0 +1,53 @@
+{
+  "title": "CLAP FX",
+  "children": [
+    {
+      "title": "Overview",
+      "lines": [
+        "CLAP plugin host",
+        "for audio effects.",
+        "",
+        "Loads .clap plugin",
+        "files and exposes",
+        "their parameters.",
+        "",
+        "Dynamically discovers",
+        "plugins from the",
+        "module directory."
+      ]
+    },
+    {
+      "title": "Setup",
+      "lines": [
+        "Upload .clap plugin",
+        "files via the ME",
+        "Installer's asset",
+        "copy feature.",
+        "",
+        "Plugins must be",
+        "compiled for ARM64",
+        "Linux (aarch64).",
+        "",
+        "Select plugin from",
+        "the browse menu.",
+        "Parameters exposed",
+        "automatically."
+      ]
+    },
+    {
+      "title": "Controls",
+      "lines": [
+        "Parameters depend on",
+        "the loaded plugin.",
+        "",
+        "Knobs are dynamically",
+        "mapped to the first",
+        "available parameters.",
+        "",
+        "Plugin selection and",
+        "parameter browsing",
+        "via the menu."
+      ]
+    }
+  ]
+}
