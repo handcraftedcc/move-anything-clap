@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 /* Inline API definitions to avoid path issues */
 extern "C" {
@@ -300,6 +301,9 @@ typedef struct {
     double cached_param_max[MAX_CACHED_PARAMS];
 } clap_fx_instance_t;
 
+/* Forward declaration */
+static int v2_load_plugin_by_id(clap_fx_instance_t *inst, const char *plugin_id);
+
 /* Sanitize a param name for use as a key (lowercase, no spaces) */
 static void sanitize_param_key(const char *name, char *key, int key_len) {
     int j = 0;
@@ -354,6 +358,104 @@ static int v2_find_param_by_key(clap_fx_instance_t *inst, const char *key) {
         }
     }
     return -1;
+}
+
+/* Extract a JSON string field from a small object (best-effort parser). */
+static int json_extract_string(const char *json, const char *key, char *out, int out_len) {
+    if (!json || !key || !out || out_len <= 0) return -1;
+    out[0] = '\0';
+
+    char pattern[64];
+    snprintf(pattern, sizeof(pattern), "\"%s\"", key);
+    const char *pos = strstr(json, pattern);
+    if (!pos) return -1;
+
+    const char *colon = strchr(pos + strlen(pattern), ':');
+    if (!colon) return -1;
+
+    const char *q1 = strchr(colon, '"');
+    if (!q1) return -1;
+    q1++;
+
+    const char *q2 = strchr(q1, '"');
+    if (!q2) return -1;
+
+    int len = (int)(q2 - q1);
+    if (len <= 0) return -1;
+    if (len >= out_len) len = out_len - 1;
+    strncpy(out, q1, len);
+    out[len] = '\0';
+    return 0;
+}
+
+/* Apply a state JSON object: {"plugin_id":"...","params":[...]} */
+static void v2_apply_state_json(clap_fx_instance_t *inst, const char *json) {
+    if (!inst || !json || !json[0]) return;
+
+    /* Restore plugin selection first, so param indices map to the right plugin. */
+    char plugin_id[256] = "";
+    if (json_extract_string(json, "plugin_id", plugin_id, sizeof(plugin_id)) == 0 &&
+        plugin_id[0]) {
+        if (strcmp(plugin_id, inst->selected_plugin_id) != 0) {
+            v2_load_plugin_by_id(inst, plugin_id);
+        }
+    }
+
+    if (!inst->current_plugin.plugin) return;
+
+    const char *params_key = strstr(json, "\"params\"");
+    if (!params_key) return;
+    const char *arr = strchr(params_key, '[');
+    if (!arr) return;
+
+    int param_count = clap_param_count(&inst->current_plugin);
+    int idx = 0;
+    const char *p = arr + 1;
+
+    while (*p && *p != ']' && idx < param_count) {
+        while (*p && (isspace((unsigned char)*p) || *p == ',')) p++;
+        if (*p == ']' || !*p) break;
+
+        char *endptr = NULL;
+        double value = strtod(p, &endptr);
+        if (endptr != p) {
+            clap_param_set(&inst->current_plugin, idx, value);
+            idx++;
+            p = endptr;
+        } else {
+            p++;
+        }
+    }
+}
+
+/* Build state JSON object into caller buffer. */
+static int v2_build_state_json(clap_fx_instance_t *inst, char *buf, int buf_len) {
+    if (!inst || !buf || buf_len <= 0) return -1;
+
+    int off = 0;
+    off += snprintf(buf + off, buf_len - off,
+                    "{\"plugin_id\":\"%s\",\"params\":[",
+                    inst->selected_plugin_id);
+    if (off >= buf_len - 1) return buf_len - 1;
+
+    int param_count = 0;
+    if (inst->current_plugin.plugin) {
+        param_count = clap_param_count(&inst->current_plugin);
+    }
+
+    for (int i = 0; i < param_count; i++) {
+        double value = clap_param_get(&inst->current_plugin, i);
+        off += snprintf(buf + off, buf_len - off, "%s%.9g",
+                        (i > 0) ? "," : "", value);
+        if (off >= buf_len - 4) break;
+    }
+
+    off += snprintf(buf + off, buf_len - off, "]}");
+    if (off >= buf_len) {
+        buf[buf_len - 1] = '\0';
+        return buf_len - 1;
+    }
+    return off;
 }
 
 static void v2_fx_log(const char *msg) {
@@ -575,6 +677,9 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
             v2_fx_log(msg);
         }
     }
+    else if (strcmp(key, "state") == 0) {
+        v2_apply_state_json(inst, val);
+    }
     else if (strncmp(key, "param_", 6) == 0 && key[6] >= '0' && key[6] <= '9') {
         /* param_0, param_1, etc. - direct index */
         int param_idx = atoi(key + 6);
@@ -660,6 +765,9 @@ static int v2_get_param(void *instance, const char *key, char *buf, int buf_len)
     }
     else if (strcmp(key, "param_count") == 0) {
         return snprintf(buf, buf_len, "%d", clap_param_count(&inst->current_plugin));
+    }
+    else if (strcmp(key, "state") == 0) {
+        return v2_build_state_json(inst, buf, buf_len);
     }
     /* chain_params - return metadata array for UI display */
     else if (strcmp(key, "chain_params") == 0) {
